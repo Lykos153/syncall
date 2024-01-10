@@ -10,22 +10,28 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, poetry2nix }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        # see https://github.com/nix-community/poetry2nix/tree/master#api for more functions and examples.
-        pkgs = nixpkgs.legacyPackages.${system};
-        inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
-      in
-      {
-        packages = {
-          syncall = mkPoetryApplication { projectDir = self; python = pkgs.python311; };
-          default = self.packages.${system}.syncall;
+  outputs = {
+    self,
+    nixpkgs,
+    flake-utils,
+    poetry2nix,
+  }:
+    flake-utils.lib.eachDefaultSystem (system: let
+      # see https://github.com/nix-community/poetry2nix/tree/master#api for more functions and examples.
+      pkgs = nixpkgs.legacyPackages.${system};
+      inherit (poetry2nix.lib.mkPoetry2Nix {inherit pkgs;}) mkPoetryApplication;
+    in {
+      packages = {
+        syncall = mkPoetryApplication {
+          projectDir = self;
+          python = pkgs.python310;
         };
+        default = self.packages.${system}.syncall;
+      };
 
-        devShells.default = pkgs.mkShell {
-          inputsFrom = [ self.packages.${system}.syncall ];
-          packages = [ pkgs.poetry ];
-        };
-      });
+      devShells.default = pkgs.mkShell {
+        inputsFrom = [self.packages.${system}.syncall];
+        packages = [pkgs.poetry];
+      };
+    });
 }
